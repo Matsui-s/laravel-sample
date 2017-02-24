@@ -11,6 +11,11 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
+//Route::controller('welcome', 'WelcomeController@index');
+
+Route::get('test', 'TestController@index');
+
+Route::get('/', function(){
+    return 'Hello World';
 });
+
