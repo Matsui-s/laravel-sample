@@ -19,14 +19,13 @@ class Test extends Model
     public function getTestDataWhere($data){
         if(count($data) >= 2){
             $query = Test::query();
-            $query->where('id', $data[0]);
             foreach($data as $datas){
                 $query->orwhere('id',$datas);
             }
-            $test_data = $query->get();
         }else{
-            $test_data = Test::where('id',$data)->get();
+            $query->where('id',$data);
         }
+        $test_data = $query->get();
         return $test_data;
     }
  
