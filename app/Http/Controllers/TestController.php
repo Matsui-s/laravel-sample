@@ -13,7 +13,7 @@ class TestController extends Controller
         //インスタンス作成
         $test_model = new Test;
 //        $test_data = $test_model->getTestDataAll();
-        $data = array(1,2,3);
+        $data = 1;
         $test_data = $test_model->getTestDataWhere($data);
 
         return view('test', [

@@ -17,8 +17,8 @@ class Test extends Model
     }
 
     public function getTestDataWhere($data){
+        $query = Test::query();
         if(count($data) >= 2){
-            $query = Test::query();
             foreach($data as $datas){
                 $query->orwhere('id',$datas);
             }
