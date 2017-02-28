@@ -99,13 +99,13 @@ class GetFeedData extends Command
                 $this->readRss2($feed['id'], $xml);
             } else {
                 //XMLとしては読めたけどフィードデータじゃない
-                Log::Error("type=unkonwn");
+                Error("type=unkonwn");
                 //このフィードサイトはスキップ
                 continue;
             }
 
         }
-        Log::info('End');
+        Info('End');
     }
 
     /**
@@ -136,9 +136,9 @@ class GetFeedData extends Command
                 'link' => (string)$item->link,
                 'description' => (string)$item->description,
                 'author' => (string)$item->children($xmlns['dc'])->creator,
-                //'pub_date' => date('Y/m/d H:i:s', strtotime($item->children($xmlns['dc'])->date)),
-                'pub_date' => date('0000/00/00 00:00:00'),
-                'original_date' => date('Y/m/d H:i:s', strtotime($item->children($xmlns['dc'])->date))
+                'pub_date' => date('Y-m-d H:i:s', strtotime($item->children($xmlns['dc'])->date)),
+//                'pub_date' => date('0000-00-00 00:00:00'),
+                'original_date' => date('Y-m-d H:i:s', strtotime($item->children($xmlns['dc'])->date))
             );
             //スクレイピング
             $itemVal = $this->webScraping($feedId, $itemVal1);
@@ -164,12 +164,14 @@ class GetFeedData extends Command
         Info("webscraping=" . $itemVal['link']);
         //記事URLのHTMLを読み込み
         $dom = new \DOMDocument();
+        $dom->formatOutput = true;
         libxml_use_internal_errors(true);
-        $dom->loadHTML(file_get_contents($itemVal['link']));
+//        $url = mb_convert_encoding(file_get_contents($itemVal['link']),'utf-8','euc-jp');
+        $url = file_get_contents($itemVal['link']);
+        $dom->loadHTML($url);
         libxml_clear_errors();
-        $html = simplexml_load_file($dom->saveXML());
+        $html = simplexml_load_string($dom->saveXML());
         $tmp = $itemVal;
-var_dump($html);exit;
         //ヘッダのmeta要素より指定のデータをセットする
         foreach ($html->head->meta as $meta) {
             foreach ($this->scraping[$feedId] as $itemkey => $metakey) {
@@ -210,31 +212,48 @@ var_dump($html);exit;
             ),
         );
         $fddt = FeedData::where('link_hash',$linkHash)->where('link',$itemVal['link'])->get();
-
         //記事情報保存
         $itemVal['feed_id'] = $feedId;
         $itemVal['link_hash'] = $linkHash;
         //記事データが存在する時は更新させる
-        if (count($fddt) > 0) {
-            $itemVal['pub_date'] = $fddt[0]['FeedData']['pub_date'];
-            $itemVal['status'] = $fddt[0]['FeedData']['status'];
-            $itemVal['id'] = $fddt[0]['FeedData']['id'];
-        }exit;
-/*        FeedData::insert(
-            [
-                'feed_id' => $itemVal['feed_id'],
-                'category_id' => 1,
-                'title' => $itemVal1['title'],
-                'link' => $item['link'],
-                'link_hash' => $linkHash,
-                'description' => $itemVal1['description'],
-                'authour' => $itemVal1['authour'],
-                'pub_date' => $itemVal1['pub_date'],
-                'original_date' => $itemVal1['original_date'],
-                'image_url' => ,
-                'movie_url' => ,
-            ]
-        );
-*/    }
+        if (count($fddt) > 0) {var_dump($fddt);exit;
+            $itemVal['pub_date'] = $fddt['pub_date'];
+            $itemVal['status'] = $fddt['status'];
+            $itemVal['id'] = $fddt['id'];
+            FeedData::where(
+                [
+                    'feed_id' => $itemVal['feed_id'],
+                    'category_id' => 1,
+                    'title' => $itemVal['title'],
+                    'link' => $itemVal['link'],
+                    'link_hash' => $linkHash,
+                    'description' => $itemVal['description'],
+                    'author' => $itemVal['author'],
+                    'pub_date' => $itemVal['pub_date'],
+                    'original_date' => $itemVal['original_date'],
+                    'status' => $itemVal['status'],
+                    'image_url' => $itemVal['image_url'],
+                    'movie_url' => isset($itemVal['movie_url']) ? $itemVal['movie_url'] : null,
+                ])->update(['id' => $itemVal['id']]
+            );
+ 
+        }else{
+            FeedData::insert(
+                [
+                    'feed_id' => $itemVal['feed_id'],
+                    'category_id' => 1,
+                    'title' => $itemVal['title'],
+                    'link' => $itemVal['link'],
+                    'link_hash' => $linkHash,
+                    'description' => $itemVal['description'],
+                    'author' => $itemVal['author'],
+                    'pub_date' => $itemVal['pub_date'],
+                    'original_date' => $itemVal['original_date'],
+                    'image_url' => $itemVal['image_url'],
+                    'movie_url' => isset($itemVal['movie_url']) ? $itemVal['movie_url'] : null,
+                ]
+            );
+        }
+    }
 
 }
