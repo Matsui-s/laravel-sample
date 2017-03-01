@@ -71,7 +71,6 @@ class GetFeedData extends Command
         }
         //フィード設定読み込み
         $feeds = $feed_ins->getFeederData();
-        
         //確認ログ出力
         info("feeds=".print_r($feeds,true));
 
@@ -205,21 +204,15 @@ class GetFeedData extends Command
         //記事URLが登録されているか確認
         //URLは仕様的に長くてindex貼れないのでCRC32ハッシュ列に貼って絞る
         $linkHash = crc32($itemVal['link']);
-        $param1 = array(
-            'conditions' => array(
-                'link_hash' => $linkHash,
-                'link' => $itemVal['link'],
-            ),
-        );
         $fddt = FeedData::where('link_hash',$linkHash)->where('link',$itemVal['link'])->get();
         //記事情報保存
         $itemVal['feed_id'] = $feedId;
         $itemVal['link_hash'] = $linkHash;
         //記事データが存在する時は更新させる
-        if (count($fddt) > 0) {var_dump($fddt);exit;
-            $itemVal['pub_date'] = $fddt['pub_date'];
-            $itemVal['status'] = $fddt['status'];
-            $itemVal['id'] = $fddt['id'];
+        if (count($fddt) > 0) {
+            $itemVal['pub_date'] = $fddt[0]->pub_date;
+            $itemVal['status'] = $fddt[0]->status;
+            $itemVal['id'] = $fddt[0]->id;
             FeedData::where(
                 [
                     'feed_id' => $itemVal['feed_id'],
