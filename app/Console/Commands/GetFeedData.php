@@ -108,6 +108,52 @@ class GetFeedData extends Command
     }
 
     /**
+     * Atom1.0形式を読み取って保存する
+     * 
+     * @param Int $feedId フィードID
+     * @param Object $xml feed要素のSimpleXMLObject
+     * @return なし
+     */
+    private function readAtom1($feedId, $xml) {
+        //ドキュメントに定義されている名前空間取得
+        $xmlns = $xml->getDocNamespaces();
+        Info("xmlns=" . print_r($xmlns, true));
+
+        //フィード情報を取得
+        $feedVal = array(
+            'title' => (string)$xml->title,
+            'link' => (string)$xml->link['href'],
+            'description' => (string)$xml->subtitle,
+            'author' => (string)$xml->author->name,
+            'pubdate' => date('Y/m/d H:i:s', strtotime($xml->updated)),
+        );
+        Info("feedVal=" . print_r($feedVal, true));
+
+        //記事情報を取得して保存
+                foreach ($xml->entry as $entry) {
+            $itemVal1 = array(
+                'title' => (string)$entry->title,
+                'link' => (string)$entry->link['href'],
+                'description' => (string)$entry->summary,
+                'author' => (string)$entry->author->name,
+                'pub_date' => date('Y-m-d H:i:s', strtotime($entry->published)),
+                //'pub_date' => date('0000/00/00 00:00:00'),
+                'original_date' => date('Y-m-d H:i:s', strtotime($entry->published))
+            );
+            if ($feedId == 4) {
+                $mediaGroup = $entry->children($xmlns['media'])->group;
+                $itemVal1['description'] = mb_substr(str_replace("\n", '', (string)$mediaGroup->description), 0, 160);
+                $itemVal1['image_url'] = (string)$mediaGroup->thumbnail->attributes()->{'url'};
+                $itemVal1['movie_url'] = (string)$mediaGroup->content->attributes()->{'url'};
+            }
+            //スクレイピング
+            $itemVal = $this->webScraping($feedId, $itemVal1);
+            Info("itemVal=" . print_r($itemVal, true));
+            //保存
+            $this->saveItem($feedId, $itemVal);
+        }
+    }
+    /**
      * RSS1.0形式を読み取って保存する
      * 
      * @param Int $feedId フィードID
@@ -146,6 +192,61 @@ class GetFeedData extends Command
         }
     }
 
+    
+    /**
+     * RSS2.0形式を読み取って保存する
+     * 
+     * @param Int $feedId フィードID
+     * @param Object $xml rss要素のSimpleXMLObject
+     * @return なし
+     */
+    private function readRss2($feedId, $xml) {
+        //ドキュメントに定義されている名前空間取得
+        $xmlns = $xml->getDocNamespaces();
+        Info("xmlns=" . print_r($xmlns, true));
+
+        $feedVal = array(
+            'title' => (string)$xml->channel->title,
+            'link' => (string)$xml->channel->link,
+            'description' => (string)$xml->channel->description,
+            'author' => (string)$xml->channel->managingEditor,
+            'pubdate' => date('Y/m/d H:i:s', strtotime($xml->channel->lastBuildDate)),
+        );
+        Info("feedVal=" . print_r($feedVal, true));
+
+        foreach ($xml->channel->item as $item) {
+            $itemVal1 = array(
+                'title' => (string)$item->title,
+                'link' => (string)$item->link,
+                'description' => (string)$item->description,
+                'author' => (string)$item->author,
+                'pub_date' => date('Y/m/d H:i:s', strtotime($item->pubDate)),
+                //'pub_date' => date('0000/00/00 00:00:00'),
+                'original_date' => date('Y/m/d H:i:s', strtotime($item->pubDate))
+            );
+            //TODO別タグ付け替え処理（多くなければこれで）
+            if ($feedId == 1 || $feedId == 5) {
+                $content1 = (string)$item->children($xmlns['content'])->encoded;
+                $youtubeUrls = preg_match('/[\'|\"](https:\/\/www\.youtube\.com\/.+?)[\'|\"]/', $content1, $matches);
+                if (count($matches) > 1) {
+                    $itemVal1['movie_url'] = $matches[1];
+                }
+                $imageUrls = preg_match('/<img.*?\ssrc\s*=\s*[\'|\"](http.+?)[\'|\"]/', $content1, $matches);
+                if (count($matches) > 1) {
+                    $itemVal1['image_url'] = $matches[1];
+                }
+                $content2 = str_replace(array('&nbsp;', "\n"), '',  strip_tags($content1));
+                $itemVal1['description'] = mb_substr($content2, 0, 160);
+                $itemVal1['author'] = (string)$item->children($xmlns['dc'])->creator;
+            }
+            //スクレイピング
+            $itemVal = $this->webScraping($feedId, $itemVal1);
+            Info("itemVal=" . print_r($itemVal, true));
+            $this->saveItem($feedId, $itemVal);
+
+        }
+    }
+
     /**
      * ウェブスクレイピング
      * 
@@ -180,7 +281,7 @@ class GetFeedData extends Command
             }
         }
         //ボディからimgタグのsrcがjpg画像の最初のものを抜き出す
-        if ($feedId == 1 || $feedId == 5) {
+        if ($feedId == 1 || $feedId == 3) {
             foreach ($html->body->xpath('//img') as $img) {
                 $src = (string)$img['src'];
                 if (preg_match('/^\s*http.+\.jpg\s*$/i', $src) === 1) {
