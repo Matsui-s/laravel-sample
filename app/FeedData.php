@@ -11,8 +11,8 @@ class FeedData extends Model
     public $timestamps = false;
 
         //フィード収集バッチ情報取得
-    public function getFeedData($linkHash,$link){
-        $fddt = FeedData::where('link_hash',$linkHash)->where('link',$link)->get();
-        return $fddt;
+    public function getFeedData(){
+        $feed_data = FeedData::where('status',0)->get();
+        return $feed_data;
     }
 }
