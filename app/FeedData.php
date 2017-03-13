@@ -12,7 +12,7 @@ class FeedData extends Model
 
         //フィード収集バッチ情報取得
     public function getFeedData(){
-        $feed_data = FeedData::where('status',0)->get();
+        $feed_data = FeedData::where('status',0)->orderBy('id','desc')->get();
         return $feed_data;
     }
 }
