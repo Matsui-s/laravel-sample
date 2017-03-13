@@ -81,7 +81,7 @@
             <nav role="navigation">
               <ul>
                 <li><a href="index.html">Home</a></li>
-                <li><a class="active" href="blog.html">Blog</a></li>
+                <li><a class="active" href="blog.html">Snow's Articles</a></li>
                 <li><a href="portfolio.html">Portfolio</a></li>
                 <li><a href="services.html">Services</a></li>
                 <li><a href="about.html">About</a></li>
@@ -96,7 +96,7 @@
 
         <div class="row"> 
           <div class="col-md-6 col-md-offset-3 text-center fh5co-heading">
-            <h2>Our Blog</h2>
+            <h2>Snow's Articles</h2>
             <p><span>Created with <i class="sl-icon-heart"></i> by the fine folks at <a href="http://freehtml5.co">FreeHTML5.co</a></span></p>
           </div>
         </div>
