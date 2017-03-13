@@ -225,7 +225,7 @@ class GetFeedData extends Command
                 'original_date' => date('Y/m/d H:i:s', strtotime($item->pubDate))
             );
             //TODO別タグ付け替え処理（多くなければこれで）
-            if ($feedId == 1 || $feedId == 5) {
+            if ($feedId == 2) {
                 $content1 = (string)$item->children($xmlns['content'])->encoded;
                 $youtubeUrls = preg_match('/[\'|\"](https:\/\/www\.youtube\.com\/.+?)[\'|\"]/', $content1, $matches);
                 if (count($matches) > 1) {
